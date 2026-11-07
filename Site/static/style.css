@@ -1,0 +1,234 @@
+/* ============ Tokens de tema ============ */
+:root,
+:root[data-theme="dark"] {
+  --bg: #1b2748;
+  --card: #d9d9d9;
+  --panel: #e6e6e6;
+  --row: #bdb8b6;
+  --tile-dark: #4a4a4a;
+  --tile-light: #737373;
+  --text: #1e1e1e;
+  --text-on-tile: #e9e9e9;
+  --title: #f1f3f8;
+  --shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  --ok: #2e9e5b;
+  --warn: #e0a100;
+  --danger: #d93a3a;
+}
+
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --card: #d4d3d3;
+  --panel: #d9d9d9;
+  --row: #bdb8b6;
+  --tile-dark: #444444;
+  --tile-light: #737373;
+  --text: #1e1e1e;
+  --text-on-tile: #f0f0f0;
+  --title: #1e1e1e;
+  --shadow: 0 6px 18px rgba(0, 0, 0, .12);
+}
+
+/* ============ Base ============ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  transition: background .3s ease;
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(12px, 3vw, 32px);
+}
+
+/* ============ Topbar ============ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: clamp(12px, 2vw, 20px);
+}
+
+.topbar__title {
+  margin: 0;
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 600;
+  color: var(--title);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .15s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle:focus-visible { outline: 3px solid #6f8cff; outline-offset: 2px; }
+.theme-toggle__icon::before { content: "🌙"; }
+:root[data-theme="light"] .theme-toggle__icon::before { content: "☀️"; }
+
+/* ============ Layout (desktop) ============ */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(12px, 2vw, 20px);
+  align-items: stretch;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vw, 16px);
+}
+
+.col--left  { }
+.col--right { }
+.col--right .card--panel { flex: 1; }
+
+/* ============ Cards ============ */
+.card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: clamp(14px, 2.4vw, 24px);
+  box-shadow: var(--shadow);
+}
+
+.card--main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+
+.main__local {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 400;
+  line-height: 1.1;
+}
+.main__temp {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+.main__icon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.main__emoji { font-size: clamp(1.6rem, 4vw, 2.4rem); }
+.main__desc { font-size: clamp(.85rem, 1.6vw, 1.05rem); }
+
+/* ============ Tiles ============ */
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(8px, 1.4vw, 14px);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 90px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--text-on-tile);
+  box-shadow: var(--shadow);
+}
+.tile--dark  { background: var(--tile-dark); }
+.tile--light { background: var(--tile-light); }
+
+.tile__label { font-size: clamp(.8rem, 1.5vw, 1rem); opacity: .9; }
+.tile__value { font-size: clamp(1.1rem, 2.6vw, 1.6rem); font-weight: 600; }
+
+/* ============ Painel de leituras ============ */
+.card--panel {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.leituras { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+
+.leitura {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 8px;
+  min-height: 110px;
+  padding: 12px 14px;
+  background: var(--row);
+  border-radius: 12px;
+}
+.leitura__item { display: flex; flex-direction: column; gap: 4px; }
+.leitura__label { font-size: .75rem; opacity: .75; }
+.leitura__valor { font-size: clamp(.9rem, 1.8vw, 1.1rem); font-weight: 600; }
+
+/* ============ Alerta ============ */
+.card--alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  transition: background .3s ease, color .3s ease;
+}
+.alert__dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
+.alert__text { font-size: clamp(.9rem, 1.6vw, 1.05rem); }
+
+.card--alert[data-status="warn"]   .alert__dot { background: var(--warn); }
+.card--alert[data-status="danger"] { background: var(--danger); color: #fff; }
+.card--alert[data-status="danger"] .alert__dot {
+  background: #fff;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* ============ Mobile ============ */
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+
+  /* no protótipo mobile os 4 tiles ficam em uma única linha */
+  .tiles { grid-template-columns: repeat(4, 1fr); }
+  .tile { min-height: 64px; padding: 8px 6px; align-items: center; text-align: center; }
+  .tile__label { font-size: .65rem; }
+  .tile__value { font-size: .95rem; }
+
+  .leitura { min-height: 56px; padding: 8px 10px; }
+  .card--main { align-items: flex-start; }
+}
+
+@media (max-width: 380px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estação Meteorológica</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    // Aplica o tema salvo antes de renderizar (evita "piscar")
+    (function () {
+      try {
+        var t = localStorage.getItem("tema") ||
+          (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <main class="dashboard">
+
+    <header class="topbar">
+      <h1 class="topbar__title">Estação Meteorológica</h1>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Alternar tema claro/escuro">
+        <span class="theme-toggle__icon" aria-hidden="true"></span>
+        <span class="theme-toggle__label">Tema</span>
+      </button>
+    </header>
+
+    <div class="layout">
+
+      <!-- Coluna esquerda -->
+      <section class="col col--left">
+        <article class="card card--main" aria-live="polite">
+          <h2 id="local" class="main__local">{{ d.local }}</h2>
+          <p id="temp-atual" class="main__temp">{{ d.temperatura }}</p>
+          <div class="main__icon">
+            <span id="icone-temp" class="main__emoji" aria-hidden="true">{{ d.icone }}</span>
+            <span id="desc-temp" class="main__desc">{{ d.descricao }}</span>
+          </div>
+        </article>
+
+        <div class="tiles">
+          <article class="tile tile--dark">
+            <span class="tile__label">Pressão</span>
+            <span id="pressao" class="tile__value">{{ d.pressao }}</span>
+          </article>
+          <article class="tile tile--light">
+            <span class="tile__label">Umidade</span>
+            <span id="umidade" class="tile__value">{{ d.umidade }}</span>
+          </article>
+          <article class="tile tile--dark">
+            <span class="tile__label">Hora</span>
+            <span id="hora" class="tile__value">{{ hora }}</span>
+          </article>
+          <article class="tile tile--light">
+            <span class="tile__label">Luz</span>
+            <span id="luz" class="tile__value">{{ d.luz }}</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- Coluna direita -->
+      <section class="col col--right">
+        <div class="card card--panel">
+          <h3 class="visually-hidden">Leituras recentes</h3>
+          <div id="leituras" class="leituras">
+            {% for l in d.ultimos %}
+            <div class="leitura">
+              <div class="leitura__item">
+                <span class="leitura__label">Temp</span>
+                <span id="ultimo-{{ loop.index0 }}-temperatura" class="leitura__valor">{{ l.temperatura }}</span>
+              </div>
+              <div class="leitura__item">
+                <span class="leitura__label">Pressão</span>
+                <span id="ultimo-{{ loop.index0 }}-pressao" class="leitura__valor">{{ l.pressao }}</span>
+              </div>
+              <div class="leitura__item">
+                <span class="leitura__label">Umidade</span>
+                <span id="ultimo-{{ loop.index0 }}-umidade" class="leitura__valor">{{ l.umidade }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <article id="alerta" class="card card--alert" data-status="{{ d.alerta_status }}" role="status" aria-live="assertive">
+          <span class="alert__dot" aria-hidden="true"></span>
+          <span id="alerta-texto" class="alert__text">{{ d.alerta_texto }}</span>
+        </article>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
