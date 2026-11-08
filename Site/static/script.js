@@ -8,31 +8,11 @@ function atualizarHora() {
   });
 }
 
-function aplicarTema(tema) {
-  const botao = document.getElementById("botao-tema");
-
-  document.documentElement.setAttribute("data-theme", tema);
-
-  if (tema === "dark") {
-    botao.textContent = "🌙 Escuro";
-  } else {
-    botao.textContent = "☀️ Claro";
-  }
-
-  localStorage.setItem("tema", tema);
-}
-
-function alternarTema() {
-  const temaAtual = document.documentElement.getAttribute("data-theme");
-
-  if (temaAtual === "dark") {
-    aplicarTema("light");
-  } else {
-    aplicarTema("dark");
-  }
-}
-
 function atualizarTela(d) {
+  if (d.tema) {
+    document.documentElement.setAttribute("data-theme", d.tema);
+  }
+
   document.getElementById("local").textContent = d.local;
   document.getElementById("temp-atual").textContent = d.temperatura;
   document.getElementById("icone-temp").textContent = d.icone;
@@ -68,6 +48,3 @@ function buscarDados() {
 atualizarHora();
 setInterval(atualizarHora, 1000);
 setInterval(buscarDados, INTERVALO);
-
-document.getElementById("botao-tema").addEventListener("click", alternarTema);
-aplicarTema(localStorage.getItem("tema") || "dark");

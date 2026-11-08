@@ -55,17 +55,6 @@ body {
   color: var(--titulo);
 }
 
-.botao-tema {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 20px;
-  background: var(--card);
-  color: var(--texto);
-  font-size: 0.9rem;
-  cursor: pointer;
-  box-shadow: var(--sombra);
-}
-
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
