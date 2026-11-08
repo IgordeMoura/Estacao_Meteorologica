@@ -1,41 +1,35 @@
 from main import app
 from flask import render_template, jsonify
-from datetime import datetime
 from services.connect import consulta_banco
 
-# ---------- Configurações simples (ajuste como quiser) ----------
 LOCAL = "Sua Localização"
-LIMITE_GAS_ALERTA = 300   # ppm: a partir daqui o alerta fica amarelo
-LIMITE_GAS_PERIGO = 600   # ppm: a partir daqui o alerta fica vermelho
+LIMITE_GAS_ALERTA = 300
+LIMITE_GAS_PERIGO = 600
 
 
-# ---------- Funções auxiliares ----------
 def para_numero(valor):
-    """Tenta converter para número. Se não der (ex.: 'ESCURO'), devolve None."""
     try:
         return float(str(valor).replace(",", "."))
     except (TypeError, ValueError):
         return None
 
 
-def formatar(valor, casas=0, unidade=""):
-    """
-    Transforma o valor em texto para a tela.
-    - sem dado            -> '--'
-    - número              -> '24.5°C', '1013 hPa'...
-    - texto (ex.: 'ESCURO') -> 'Escuro' (aparece como está, sem unidade)
-    """
+def formatar(valor, casas, unidade):
     if valor is None:
         return "--"
+
     numero = para_numero(valor)
     if numero is None:
         return str(valor).capitalize()
-    return f"{numero:.{casas}f}{unidade}"
+
+    if casas == 0:
+        return str(int(round(numero))) + unidade
+    return str(round(numero, casas)) + unidade
 
 
 def icone_temperatura(temperatura):
-    """Escolhe o emoji e a descrição de acordo com a temperatura."""
     temperatura = para_numero(temperatura)
+
     if temperatura is None:
         return "🌡️", "Sem dados"
     if temperatura <= 10:
@@ -50,8 +44,8 @@ def icone_temperatura(temperatura):
 
 
 def status_gas(gas):
-    """Devolve o status do alerta ('ok', 'warn' ou 'danger') e o texto a mostrar."""
     gas = para_numero(gas)
+
     if gas is None:
         return "ok", "Gás / Fumaça: sem dados"
     if gas >= LIMITE_GAS_PERIGO:
@@ -61,42 +55,44 @@ def status_gas(gas):
     return "ok", f"Gás / Fumaça: normal ({gas:.0f} ppm)"
 
 
+def pegar_ordem(registro):
+    return registro["ordem"]
+
+
 def obter_dados():
-    """
-    Consulta o banco A CADA CHAMADA (assim os dados nunca ficam velhos)
-    e separa o registro atual (ordem 1) dos dois anteriores (ordem 2 e 3).
-    """
-    atual = {}
-    ultimos = []
+    registros = []
 
     dados_consulta = consulta_banco()
     if dados_consulta:
-        for id, registro in dados_consulta.items():
-            ordem = registro.get("ordem")
-            if ordem == 1:
-                atual = registro
-            elif ordem is not None and ordem <= 3:
-                ultimos.append(registro)
+        for chave in dados_consulta:
+            registro = dados_consulta[chave]
+            if isinstance(registro, dict) and isinstance(registro.get("ordem"), str):
+                registros.append(registro)
 
-    ultimos.sort(key=lambda r: r["ordem"])  # 2 antes do 3
+    registros.sort(key=pegar_ordem, reverse=True)
+
+    if len(registros) == 0:
+        return {}, []
+
+    atual = registros[0]
+    ultimos = registros[1:3]
     return atual, ultimos
 
 
 def montar_dados():
-    """Monta um dicionário com tudo já formatado, pronto para o HTML e para o JS."""
     atual, ultimos = obter_dados()
 
     emoji, descricao = icone_temperatura(atual.get("temperatura"))
     alerta_status, alerta_texto = status_gas(atual.get("gas"))
 
     linhas = []
-    for registro in ultimos[:2]:
+    for registro in ultimos:
         linhas.append({
             "temperatura": formatar(registro.get("temperatura"), 1, "°C"),
             "pressao": formatar(registro.get("pressao"), 0, " hPa"),
             "umidade": formatar(registro.get("umidade"), 0, "%"),
         })
-    # o protótipo sempre mostra 2 linhas; completa com '--' se faltar registro
+
     while len(linhas) < 2:
         linhas.append({"temperatura": "--", "pressao": "--", "umidade": "--"})
 
@@ -114,14 +110,11 @@ def montar_dados():
     }
 
 
-# ---------- Rotas ----------
 @app.route("/")
 def pagina_home():
-    hora = datetime.now().strftime("%H:%M")
-    return render_template("index.html", d=montar_dados(), hora=hora)
+    return render_template("index.html", d=montar_dados())
 
 
 @app.route("/api/dados")
 def api_dados():
-    # O JavaScript chama esta rota a cada 10 s para atualizar a tela sem recarregar
     return jsonify(montar_dados())
