@@ -34,6 +34,7 @@ def registro_banco(temperatura, pressao, umidade, luz, gas):
 
     requests.post(f'{link}/Registros/.json', data=json.dumps(dados), timeout=10)
 
+
 def consulta_banco():
     parametros = {"orderBy": '"$key"', "limitToLast": 3}
 
@@ -46,3 +47,4 @@ def consulta_banco():
         return None
 
     return requisicao.json()
+

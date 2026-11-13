@@ -3,20 +3,16 @@ from flask import render_template, jsonify
 from datetime import datetime
 from services.connect import consulta_banco
 
-# ---------- Configurações simples (ajuste como quiser) ----------
 LOCAL = "Sua Localização"
-LIMITE_GAS_ALERTA = 300   # ppm: a partir daqui o alerta fica amarelo
-LIMITE_GAS_PERIGO = 600   # ppm: a partir daqui o alerta fica vermelho
+LIMITE_GAS_ALERTA = 2000   
+LIMITE_GAS_PERIGO = 4000   
 
-
-# ---------- Funções auxiliares ----------
 def para_numero(valor):
     """Tenta converter para número. Se não der (ex.: 'ESCURO'), devolve None."""
     try:
         return float(str(valor).replace(",", "."))
     except (TypeError, ValueError):
         return None
-
 
 def formatar(valor, casas=0, unidade=""):
     """
@@ -48,75 +44,47 @@ def icone_temperatura(temperatura):
         return "☀️", "Quente"
     return "🔥", "Muito quente"
 
-
 def status_gas(gas):
     """Devolve o status do alerta ('ok', 'warn' ou 'danger') e o texto a mostrar."""
     gas = para_numero(gas)
     if gas is None:
         return "ok", "Gás / Fumaça: sem dados"
+    leitura = f"{gas:.0f}"
     if gas >= LIMITE_GAS_PERIGO:
-        return "danger", f"PERIGO: gás/fumaça detectado ({gas:.0f} ppm)"
+        return "danger", f"PERIGO: gás/fumaça detectado ({leitura})"
     if gas >= LIMITE_GAS_ALERTA:
-        return "warn", f"Atenção: nível elevado de gás/fumaça ({gas:.0f} ppm)"
-    return "ok", f"Gás / Fumaça: normal ({gas:.0f} ppm)"
-
-def pegar_ordem(registro):
-    try:
-        return datetime.strptime(registro.get("ordem"), "%Y-%m-%d %H:%M:%S")
-    except (TypeError, ValueError):
-        return datetime.min
-
-def tema_pela_luz(luz):
-    if luz is None:
-        return ""
-    if str(luz).upper() == "CLARO":
-        return "light"
-    if str(luz).upper() == "ESCURO":
-        return "dark"
-    return ""
-
+        return "warn", f"Atenção: nível elevado de gás/fumaça ({leitura})"
+    return "ok", f"Gás / Fumaça: normal ({leitura})"
 
 def obter_dados():
-    registros = []
+    """
+    Consulta o banco A CADA CHAMADA (assim os dados nunca ficam velhos)
+    e separa o registro atual (ordem 1) dos dois anteriores (ordem 2 e 3).
+    """
+    atual = {}
+    ultimos = []
 
     dados_consulta = consulta_banco()
+    if dados_consulta:
+        registros = []
+        for id, registro in dados_consulta.items():
+            ordem = registro.get("ordem")
+            if ordem:
+                data = datetime.strptime(ordem, "%Y-%m-%d %H:%M:%S")
+                registros.append((data, registro))
+        registros.sort(key=lambda x: x[0], reverse=True)
+        atual = registros[0][1] if registros else {}
+        ultimos = [registro for _, registro in registros[1:4]]
 
-    if not isinstance(dados_consulta, dict):
-        return {}, []
-
-    for chave, registro in dados_consulta.items():
-
-        if not isinstance(registro, dict):
-            continue
-
-        try:
-            data = datetime.strptime(registro.get("ordem"), "%Y-%m-%d %H:%M:%S")
-            registro_copia = registro.copy()
-            registro_copia["_data_ordem"] = data
-            registros.append(registro_copia)
-
-        except (TypeError, ValueError):
-            continue
-
-    registros.sort(key=lambda r: r["_data_ordem"], reverse=True)
-
-    if not registros:
-        return {}, []
-
-    atual = registros[0]
-    ultimos = registros[1:3]
-    atual.pop("_data_ordem", None)
-
-    for registro in ultimos:
-        registro.pop("_data_ordem", None)
+    ultimos.sort(key=lambda r: r["ordem"])  
     return atual, ultimos
 
 def montar_dados():
     """Monta um dicionário com tudo já formatado, pronto para o HTML e para o JS."""
     atual, ultimos = obter_dados()
 
-    emoji, descricao = icone_temperatura(atual.get("temperatura"))
     alerta_status, alerta_texto = status_gas(atual.get("gas"))
+    emoji, descricao = icone_temperatura(atual.get("temperatura"))
 
     linhas = []
     for registro in ultimos[:2]:
@@ -125,7 +93,7 @@ def montar_dados():
             "pressao": formatar(registro.get("pressao"), 0, " hPa"),
             "umidade": formatar(registro.get("umidade"), 0, "%"),
         })
-    # o protótipo sempre mostra 2 linhas; completa com '--' se faltar registro
+    
     while len(linhas) < 2:
         linhas.append({"temperatura": "--", "pressao": "--", "umidade": "--"})
 
@@ -135,7 +103,6 @@ def montar_dados():
         "pressao": formatar(atual.get("pressao"), 0, " hPa"),
         "umidade": formatar(atual.get("umidade"), 0, "%"),
         "luz": formatar(atual.get("luz"), 0, " lx"),
-        "tema": tema_pela_luz(atual.get("luz")),
         "icone": emoji,
         "descricao": descricao,
         "alerta_status": alerta_status,
@@ -143,8 +110,6 @@ def montar_dados():
         "ultimos": linhas,
     }
 
-
-# ---------- Rotas ----------
 @app.route("/")
 def pagina_home():
     hora = datetime.now().strftime("%H:%M")
@@ -153,5 +118,5 @@ def pagina_home():
 
 @app.route("/api/dados")
 def api_dados():
-    # O JavaScript chama esta rota a cada 10 s para atualizar a tela sem recarregar
+    
     return jsonify(montar_dados())
